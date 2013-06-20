@@ -15,6 +15,13 @@ document.onkeydown = function(e) {
 				game.start();
 			}
 			break;
+		case 32: // spacebar
+			if (game.paused) {
+				game.run();
+			} else {
+				game.pause();
+			}
+			break;
 		case 37: // left arrow
 		case 100: // numpad 4
 			game.snake.turnLeft();
@@ -35,6 +42,8 @@ document.onkeydown = function(e) {
 
 function Game() {
 	this.started = false;
+	this.paused = true;
+
 	this.canvas = new Canvas('playingArea', 21, 21, 8);
 	this.snake = new Snake(this.canvas, 3, [11,11]);
 	this.snake.draw();
@@ -42,27 +51,41 @@ function Game() {
 	this.start = function() {
 		this.started = true;
 
-		var apple = new Apple(this.canvas, this.snake);
-		apple.draw();
+		this.apple = new Apple(this.canvas, this.snake);
+		this.apple.draw();
 
-		var ate = false;
+		this.ate = false;
 
-		var interval = window.setInterval(function(obj) {
-			if (!obj.snake.move(!ate)) {
-				window.clearInterval(interval);
+		this.run();
+	}
+
+	this.run = function() {
+		if (!this.started) {
+			return;
+		}
+
+		this.paused = false;
+		this.interval = window.setInterval(function(obj) {
+			if (!obj.snake.move(!obj.ate)) {
+				window.clearInterval(obj.interval);
 			}
 			obj.canvas.clear();
 
-			if (obj.snake.head()[0] === apple.position[0] && obj.snake.head()[1] === apple.position[1]) {
-				ate = true;
-				apple.reposition();
+			if (obj.snake.head()[0] === obj.apple.position[0] && obj.snake.head()[1] === obj.apple.position[1]) {
+				obj.ate = true;
+				obj.apple.reposition();
 			} else {
-				ate = false;
-				apple.draw();
+				obj.ate = false;
+				obj.apple.draw();
 			}
 
 			obj.snake.draw();
 		}, 200, this);
+	}
+
+	this.pause = function() {
+		this.paused = true;
+		window.clearInterval(this.interval);
 	}
 }
 
