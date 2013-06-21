@@ -47,16 +47,13 @@ function Game() {
 
 	this.canvas = new Canvas('playingArea', 21, 21, 8);
 	this.snake = new Snake(this.canvas, 3, [11,11]);
+	this.apple = new Apple(this.canvas, this.snake);
+
 	this.snake.draw();
 
 	this.start = function() {
 		this.started = true;
-
-		this.apple = new Apple(this.canvas, this.snake);
-		this.apple.draw();
-
 		this.ate = false;
-
 		this.run();
 	}
 
@@ -74,21 +71,21 @@ function Game() {
 		}
 
 		this.paused = false;
+		this.canvas.clear();
+		this.apple.draw();
+		this.snake.draw();
 		this.interval = window.setInterval(function(obj) {
 			if (!obj.snake.move(!obj.ate)) {
 				obj.stop();
 			}
-			obj.canvas.clear();
 
 			if (obj.snake.head()[0] === obj.apple.position[0] && obj.snake.head()[1] === obj.apple.position[1]) {
 				obj.ate = true;
 				obj.apple.reposition();
+				obj.apple.draw();
 			} else {
 				obj.ate = false;
-				obj.apple.draw();
 			}
-
-			obj.snake.draw();
 		}, 200, this);
 	}
 
@@ -137,9 +134,11 @@ function Snake(canvas, size, position) {
 		}
 		// add new cell
 		this.body.push(head);
+		this.canvas.drawCell(head[0], head[1], '#00f');
 		this.prevDirection = this.direction;
 		// remove old cell
 		if (shorten) {
+			this.canvas.drawCell(this.body[0][0], this.body[0][1], '#fff');
 			this.body.shift();
 		}
 		return true;
