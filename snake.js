@@ -42,6 +42,7 @@ document.onkeydown = function(e) {
 
 function Game() {
 	this.started = false;
+	this.stopped = false;
 	this.paused = true;
 
 	this.canvas = new Canvas('playingArea', 21, 21, 8);
@@ -59,6 +60,14 @@ function Game() {
 		this.run();
 	}
 
+	this.stop = function() {
+		this.stopped = true;
+		window.clearInterval(this.interval);
+		window.setTimeout(function(obj) {
+			obj.canvas.write('GAME OVER', '#666');
+		}, 100, this);
+	}
+
 	this.run = function() {
 		if (!this.started) {
 			return;
@@ -67,7 +76,7 @@ function Game() {
 		this.paused = false;
 		this.interval = window.setInterval(function(obj) {
 			if (!obj.snake.move(!obj.ate)) {
-				window.clearInterval(obj.interval);
+				obj.stop();
 			}
 			obj.canvas.clear();
 
@@ -84,8 +93,12 @@ function Game() {
 	}
 
 	this.pause = function() {
+		if (this.stopped) {
+			return;
+		}
 		this.paused = true;
 		window.clearInterval(this.interval);
+		this.canvas.write('PAUSED', '#aaa');
 	}
 }
 
@@ -113,7 +126,7 @@ function Snake(canvas, size, position) {
 
 	this.move = function(shorten) {
 		var head = [this.head()[0]+this.direction[0], this.head()[1]+this.direction[1]];
-		// check boundaries
+		// crash check
 		if (head[0] <= 0 || head[0] > this.canvas.width || head[1] <= 0 || head[1] > this.canvas.height) {
 			return false;
 		}
@@ -204,6 +217,14 @@ function Canvas(id, width, height, size) {
 	this.drawCell = function(x, y, color) {
 		this.context.fillStyle = color;
 		this.context.fillRect(this.size*x + x, this.pixelHeight - (this.size*(y+1) + y), this.size, this.size);
+	}
+
+	this.write = function(text, color) {
+		this.context.fillStyle = color;
+		this.context.font = 'bold 25px Arial';
+		this.context.textAlign = 'center';
+		this.context.textBaseline = 'middle';
+		this.context.fillText(text, Math.floor(this.pixelWidth/2), Math.floor(this.pixelHeight/2));
 	}
 
 	this.clear = function() {
