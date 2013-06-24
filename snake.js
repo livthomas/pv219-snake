@@ -52,7 +52,7 @@ document.onkeydown = function(e) {
 function Game() {
 	this.started = false;
 	this.stopped = false;
-	this.paused = true;
+	this.paused = false;
 
 	this.canvas = new Canvas('playingArea', 21, 21, 8);
 	this.snake = new Snake(this.canvas, 3, [Math.floor(this.canvas.width/2)+1,Math.floor(this.canvas.height/2)+1]);
@@ -62,12 +62,18 @@ function Game() {
 }
 
 Game.prototype.start = function() {
+	if (this.started || this.stopped) {
+		return;
+	}
 	this.started = true;
 	this.ate = false;
 	this.run();
 }
 
 Game.prototype.stop = function() {
+	if (!this.started || this.stopped) {
+		return;
+	}
 	this.stopped = true;
 	window.clearInterval(this.interval);
 	window.setTimeout(function(obj) {
@@ -76,13 +82,17 @@ Game.prototype.stop = function() {
 }
 
 Game.prototype.run = function() {
-	if (!this.started) {
+	if (!this.started || this.stopped) {
 		return;
 	}
 	this.paused = false;
+	// reset direction
+	this.snake.deleteNewDirection();
+	// draw objects
 	this.canvas.clear();
 	this.apple.draw();
 	this.snake.draw();
+	// animate
 	this.interval = window.setInterval(function(obj) {
 		if (!obj.snake.move(!obj.ate)) {
 			obj.stop();
@@ -98,7 +108,7 @@ Game.prototype.run = function() {
 }
 
 Game.prototype.pause = function() {
-	if (this.stopped) {
+	if (!this.started || this.paused || this.stopped) {
 		return;
 	}
 	this.paused = true;
@@ -112,8 +122,7 @@ Game.prototype.pause = function() {
 
 function Snake(canvas, length, position) {
 	this.canvas = canvas;
-	this.direction = [0,1];
-	this.prevDirection = [0,1];
+	this.direction = [[0,1]];
 
 	this.body = [];
 	for (var i=length-1; i>=0; --i) {
@@ -134,7 +143,8 @@ Snake.prototype.draw = function() {
 }
 
 Snake.prototype.move = function(shorten) {
-	var head = [this.head()[0]+this.direction[0], this.head()[1]+this.direction[1]];
+	var dir = (this.direction.length > 1) ? this.direction[1] : this.direction[0];
+	var head = [this.head()[0]+dir[0], this.head()[1]+dir[1]];
 	// crash check
 	if (head[0] <= 0 || head[0] > this.canvas.width || head[1] <= 0 || head[1] > this.canvas.height) {
 		return false;
@@ -147,7 +157,9 @@ Snake.prototype.move = function(shorten) {
 	// add new cell
 	this.body.push(head);
 	this.canvas.drawCell(head[0], head[1], '#00f');
-	this.prevDirection = this.direction;
+	if (this.direction.length > 1) {
+		this.direction.shift();
+	}
 	// remove old cell
 	if (shorten) {
 		this.canvas.drawCell(this.body[0][0], this.body[0][1], '#fff');
@@ -156,32 +168,44 @@ Snake.prototype.move = function(shorten) {
 	return true;
 }
 
+Snake.prototype.deleteNewDirection = function() {
+	this.direction.splice(1,this.direction.length-1);
+}
+
+Snake.prototype.checkLastDirection = function(direction) {
+	var last = this.direction[this.direction.length-1];
+	if (last[0] === direction[0] && last[1] === direction[1]) {
+		return true;
+	}
+	return false;
+}
+
 Snake.prototype.turnUp = function() {
-	if (this.prevDirection[0] === 0 && this.prevDirection[1] === -1) {
+	if (this.checkLastDirection([0,-1])) {
 		return;
 	}
-	this.direction = [0,1];
+	this.direction.push([0,1]);
 }
 
 Snake.prototype.turnDown = function() {
-	if (this.prevDirection[0] === 0 && this.prevDirection[1] === 1) {
+	if (this.checkLastDirection([0,1])) {
 		return;
 	}
-	this.direction = [0,-1];
+	this.direction.push([0,-1]);
 }
 
 Snake.prototype.turnLeft = function() {
-	if (this.prevDirection[0] === 1 && this.prevDirection[1] === 0) {
+	if (this.checkLastDirection([1,0])) {
 		return;
 	}
-	this.direction = [-1,0];
+	this.direction.push([-1,0]);
 }
 
 Snake.prototype.turnRight = function() {
-	if (this.prevDirection[0] === -1 && this.prevDirection[1] === 0) {
+	if (this.checkLastDirection([-1,0])) {
 		return;
 	}
-	this.direction = [1,0];
+	this.direction.push([1,0]);
 }
 
 /**
