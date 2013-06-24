@@ -13,7 +13,11 @@ window.onload = function() {
 document.onkeydown = function(e) {
 	if (!game) {
 		return;
-	}	
+	}
+	if ([13,32,37,38,39,40,98,100,102,104].indexOf(e.keyCode) === -1) {
+		return;
+	}
+	e.preventDefault();
 	switch (e.keyCode) {
 		case 13: // enter
 			if (!game.started) {
