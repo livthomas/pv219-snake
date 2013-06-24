@@ -1,3 +1,9 @@
+/**
+ * This file contains a simple snake game (https://github.com/livthomas/pv219-snake)
+ *
+ * Copyright (c) 2013 Tomas Livora <livoratom@gmail.com>
+ */
+
 var game;
 
 window.onload = function() {
@@ -7,8 +13,7 @@ window.onload = function() {
 document.onkeydown = function(e) {
 	if (!game) {
 		return;
-	}
-	
+	}	
 	switch (e.keyCode) {
 		case 13: // enter
 			if (!game.started) {
@@ -40,161 +45,175 @@ document.onkeydown = function(e) {
 	}
 }
 
+/**
+ * Class that controls the game
+ */
+
 function Game() {
 	this.started = false;
 	this.stopped = false;
 	this.paused = true;
 
 	this.canvas = new Canvas('playingArea', 21, 21, 8);
-	this.snake = new Snake(this.canvas, 3, [11,11]);
+	this.snake = new Snake(this.canvas, 3, [Math.floor(this.canvas.width/2)+1,Math.floor(this.canvas.height/2)+1]);
 	this.apple = new Apple(this.canvas, this.snake);
 
 	this.snake.draw();
-
-	this.start = function() {
-		this.started = true;
-		this.ate = false;
-		this.run();
-	}
-
-	this.stop = function() {
-		this.stopped = true;
-		window.clearInterval(this.interval);
-		window.setTimeout(function(obj) {
-			obj.canvas.write('GAME OVER', '#666');
-		}, 100, this);
-	}
-
-	this.run = function() {
-		if (!this.started) {
-			return;
-		}
-
-		this.paused = false;
-		this.canvas.clear();
-		this.apple.draw();
-		this.snake.draw();
-		this.interval = window.setInterval(function(obj) {
-			if (!obj.snake.move(!obj.ate)) {
-				obj.stop();
-			}
-
-			if (obj.snake.head()[0] === obj.apple.position[0] && obj.snake.head()[1] === obj.apple.position[1]) {
-				obj.ate = true;
-				obj.apple.reposition();
-				obj.apple.draw();
-			} else {
-				obj.ate = false;
-			}
-		}, 200, this);
-	}
-
-	this.pause = function() {
-		if (this.stopped) {
-			return;
-		}
-		this.paused = true;
-		window.clearInterval(this.interval);
-		this.canvas.write('PAUSED', '#aaa');
-	}
 }
 
-function Snake(canvas, size, position) {
-	//position = typeof position !== 'undefined' ? position : canvas.;
+Game.prototype.start = function() {
+	this.started = true;
+	this.ate = false;
+	this.run();
+}
 
+Game.prototype.stop = function() {
+	this.stopped = true;
+	window.clearInterval(this.interval);
+	window.setTimeout(function(obj) {
+		obj.canvas.write('GAME OVER', '#666');
+	}, 100, this);
+}
+
+Game.prototype.run = function() {
+	if (!this.started) {
+		return;
+	}
+	this.paused = false;
+	this.canvas.clear();
+	this.apple.draw();
+	this.snake.draw();
+	this.interval = window.setInterval(function(obj) {
+		if (!obj.snake.move(!obj.ate)) {
+			obj.stop();
+		}
+		if (obj.snake.head()[0] === obj.apple.position[0] && obj.snake.head()[1] === obj.apple.position[1]) {
+			obj.ate = true;
+			obj.apple.reposition();
+			obj.apple.draw();
+		} else {
+			obj.ate = false;
+		}
+	}, 200, this);
+}
+
+Game.prototype.pause = function() {
+	if (this.stopped) {
+		return;
+	}
+	this.paused = true;
+	window.clearInterval(this.interval);
+	this.canvas.write('PAUSED', '#aaa');
+}
+
+/**
+ * Class that represents a snake
+ */
+
+function Snake(canvas, length, position) {
 	this.canvas = canvas;
 	this.direction = [0,1];
 	this.prevDirection = [0,1];
 
 	this.body = [];
-	for (i=size-1; i>=0; --i) {
-		this.body.push([position[0], position[1]-i]);
-	}
-
-	this.head = function() {
-		return this.body[this.body.length-1];
-	}
-
-	this.draw = function() {
-		for (i=0; i<this.body.length; ++i) {
-			this.canvas.drawCell(this.body[i][0], this.body[i][1], '#00f');
+	for (var i=length-1; i>=0; --i) {
+		if (position[1]-i > 0) {
+			this.body.push([position[0], position[1]-i]);
 		}
-	}
-
-	this.move = function(shorten) {
-		var head = [this.head()[0]+this.direction[0], this.head()[1]+this.direction[1]];
-		// crash check
-		if (head[0] <= 0 || head[0] > this.canvas.width || head[1] <= 0 || head[1] > this.canvas.height) {
-			return false;
-		}
-		for (i=0; i<this.body.length-1; ++i) {
-			if (head[0] === this.body[i][0] && head[1] === this.body[i][1]) {
-				return false;
-			}
-		}
-		// add new cell
-		this.body.push(head);
-		this.canvas.drawCell(head[0], head[1], '#00f');
-		this.prevDirection = this.direction;
-		// remove old cell
-		if (shorten) {
-			this.canvas.drawCell(this.body[0][0], this.body[0][1], '#fff');
-			this.body.shift();
-		}
-		return true;
-	}
-
-	this.turnUp = function() {
-		if (this.prevDirection[0] === 0 && this.prevDirection[1] === -1) {
-			return;
-		}
-		this.direction = [0,1];
-	}
-
-	this.turnDown = function() {
-		if (this.prevDirection[0] === 0 && this.prevDirection[1] === 1) {
-			return;
-		}
-		this.direction = [0,-1];
-	}
-
-	this.turnLeft = function() {
-		if (this.prevDirection[0] === 1 && this.prevDirection[1] === 0) {
-			return;
-		}
-		this.direction = [-1,0];
-	}
-
-	this.turnRight = function() {
-		if (this.prevDirection[0] === -1 && this.prevDirection[1] === 0) {
-			return;
-		}
-		this.direction = [1,0];
 	}
 }
+
+Snake.prototype.head = function() {
+	return this.body[this.body.length-1];
+}
+
+Snake.prototype.draw = function() {
+	for (var i=0, cell; cell = this.body[i++];) {
+		this.canvas.drawCell(cell[0], cell[1], '#00f');
+	}
+}
+
+Snake.prototype.move = function(shorten) {
+	var head = [this.head()[0]+this.direction[0], this.head()[1]+this.direction[1]];
+	// crash check
+	if (head[0] <= 0 || head[0] > this.canvas.width || head[1] <= 0 || head[1] > this.canvas.height) {
+		return false;
+	}
+	for (var i=0, cell; cell = this.body[i++];) {
+		if (head[0] === cell[0] && head[1] === cell[1]) {
+			return false;
+		}
+	}
+	// add new cell
+	this.body.push(head);
+	this.canvas.drawCell(head[0], head[1], '#00f');
+	this.prevDirection = this.direction;
+	// remove old cell
+	if (shorten) {
+		this.canvas.drawCell(this.body[0][0], this.body[0][1], '#fff');
+		this.body.shift();
+	}
+	return true;
+}
+
+Snake.prototype.turnUp = function() {
+	if (this.prevDirection[0] === 0 && this.prevDirection[1] === -1) {
+		return;
+	}
+	this.direction = [0,1];
+}
+
+Snake.prototype.turnDown = function() {
+	if (this.prevDirection[0] === 0 && this.prevDirection[1] === 1) {
+		return;
+	}
+	this.direction = [0,-1];
+}
+
+Snake.prototype.turnLeft = function() {
+	if (this.prevDirection[0] === 1 && this.prevDirection[1] === 0) {
+		return;
+	}
+	this.direction = [-1,0];
+}
+
+Snake.prototype.turnRight = function() {
+	if (this.prevDirection[0] === -1 && this.prevDirection[1] === 0) {
+		return;
+	}
+	this.direction = [1,0];
+}
+
+/**
+ * Class that represents food for the snake
+ */
 
 function Apple(canvas, snake) {
 	this.canvas = canvas;
+	this.snake = snake;
+	this.reposition();
+}
 
-	this.reposition = function() {
-		var placed = false;
-		while (!placed) {
-			this.position = [Math.floor(Math.random()*this.canvas.width)+1, Math.floor(Math.random()*this.canvas.height)+1];
-			placed = true;
-			for (i=0; i<snake.body.length; ++i) {
-				if (this.position[0] === snake.body[i][0] && this.position[1] === snake.body[i][1]) {
-					placed = false;
-				}
+Apple.prototype.reposition = function() {
+	var placed = false;
+	while (!placed) {
+		this.position = [Math.floor(Math.random()*this.canvas.width)+1, Math.floor(Math.random()*this.canvas.height)+1];
+		placed = true;
+		for (var i=0, cell; cell = this.snake.body[i++];) {
+			if (this.position[0] === cell[0] && this.position[1] === cell[1]) {
+				placed = false;
 			}
 		}
 	}
-
-	this.draw = function() {
-		this.canvas.drawCell(this.position[0], this.position[1], '#f00');
-	}
-
-	this.reposition();
 }
+
+Apple.prototype.draw = function() {
+	this.canvas.drawCell(this.position[0], this.position[1], '#f00');
+}
+
+/**
+ * Class that is responsible for drawing on canvas
+ */
 
 function Canvas(id, width, height, size) {
 	this.width = width;
@@ -202,32 +221,32 @@ function Canvas(id, width, height, size) {
 	this.height = height;
 	this.pixelHeight = (height+2)*size + width+1;
 	this.size = size;
-
+	// adjust canvas dimensions
 	var element = document.getElementById(id);
 	element.setAttribute('width', this.pixelWidth);
 	element.setAttribute('height', this.pixelHeight);
-
+	// draw border
 	this.context = element.getContext('2d');
 	this.context.fillStyle = '#000';
 	this.context.fillRect(0, 0, this.pixelWidth, this.pixelHeight);
 	this.context.fillStyle = '#fff';
 	this.context.fillRect(this.size, this.size, this.pixelWidth - 2*this.size, this.pixelHeight - 2*this.size);
+}
 
-	this.drawCell = function(x, y, color) {
-		this.context.fillStyle = color;
-		this.context.fillRect(this.size*x + x, this.pixelHeight - (this.size*(y+1) + y), this.size, this.size);
-	}
+Canvas.prototype.drawCell = function(x, y, color) {
+	this.context.fillStyle = color;
+	this.context.fillRect(this.size*x + x, this.pixelHeight - (this.size*(y+1) + y), this.size, this.size);
+}
 
-	this.write = function(text, color) {
-		this.context.fillStyle = color;
-		this.context.font = 'bold 25px Arial';
-		this.context.textAlign = 'center';
-		this.context.textBaseline = 'middle';
-		this.context.fillText(text, Math.floor(this.pixelWidth/2), Math.floor(this.pixelHeight/2));
-	}
+Canvas.prototype.write = function(text, color) {
+	this.context.fillStyle = color;
+	this.context.font = 'bold '+this.width+'px Arial';
+	this.context.textAlign = 'center';
+	this.context.textBaseline = 'middle';
+	this.context.fillText(text, Math.floor(this.pixelWidth/2), Math.floor(this.pixelHeight/2));
+}
 
-	this.clear = function() {
-		this.context.fillStyle = '#fff';
-		this.context.fillRect(this.size, this.size, this.pixelWidth - 2*this.size, this.pixelHeight - 2*this.size);
-	}
+Canvas.prototype.clear = function() {
+	this.context.fillStyle = '#fff';
+	this.context.fillRect(this.size, this.size, this.pixelWidth - 2*this.size, this.pixelHeight - 2*this.size);
 }
