@@ -8,13 +8,28 @@
 	</head>
 	<body>
 		<h1>Snake</h1>
+		<form>
+			<label for="players">Number of players:</label>
+			<select name="players" id="players">
+				<option value="1" selected="selected">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+			</select>
+		</form>
 		<canvas id="playingArea" width="1" height="1"></canvas>
 		<h2>Instructions</h2>
 		<ul>
 			<li>Press ENTER to start the game.</li>
-			<li>Change snake direction by pressing ARROW or NUMPAD keys.</li>
 			<li>Press SPACEBAR to pause/continue the game.</li>
 			<li>Refresh the webpage to reset the game.</li>
+		</ul>
+		<h3>Controls</h3>
+		<ul>
+			<li>Player 1 uses ARROW keys to change snake direction.</li>
+			<li>Player 2 uses W, S, A, D keys to change snake direction.</li>
+			<li>Player 3 uses I, J, K, L keys to change snake direction.</li>
+			<li>Player 4 uses NUMPAD keys to change snake direction.</li>
 		</ul>
 		<footer>© livthomas 2013</footer>
 	</body>
