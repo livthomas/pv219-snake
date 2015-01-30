@@ -40,6 +40,7 @@ function Game(width, height, winNumber) {
     this.freeTiles = width * height;
 
     this.moved = false;
+    this.active = true;
 
     this.maxNumber = 2;
     this.winNumber = winNumber;
@@ -77,7 +78,7 @@ Game.prototype.addTile = function () {
 
 Game.prototype.moveTile = function (fromX, fromY, deltaX, deltaY) {
     // original position empty
-    if (!this.tiles[fromX][fromY]) {
+    if (!this.active || !this.tiles[fromX][fromY]) {
         return;
     }
     while (0 <= fromX + deltaX && fromX + deltaX < this.tiles.length && 0 <= fromY + deltaY && fromY + deltaY < this.tiles[0].length) {
@@ -99,7 +100,14 @@ Game.prototype.moveTile = function (fromX, fromY, deltaX, deltaY) {
             this.tiles[fromX][fromY] = null;
             this.canvas.drawTile(fromX, fromY, null);
             this.freeTiles++;
+
+            // check maximum number
             this.maxNumber = Math.max(this.maxNumber, newTile.number);
+            if (this.maxNumber === this.winNumber) {
+                this.active = false;
+                this.canvas.write("You win!")
+            }
+
             this.moved = true;
             return;
         }
@@ -146,7 +154,7 @@ Game.prototype.moveDown = function () {
 };
 
 Game.prototype.afterMove = function () {
-    if (this.moved) {
+    if (this.active && this.moved) {
         this.addTile();
         this.moved = false;
         // mark all tiles as not changed
@@ -157,6 +165,9 @@ Game.prototype.afterMove = function () {
                 }
             }
         }
+    } else if (this.freeTiles === 0) {
+        this.active = false;
+        this.canvas.write("Game over")
     }
 };
 
@@ -232,4 +243,12 @@ Canvas.prototype.drawTile = function (x, y, tile) {
         this.context.textBaseline = 'middle';
         this.context.fillText(tile.number, Math.floor(this.size * (x + 0.5)), this.pixelHeight - Math.floor(this.size * (y + 0.5)));
     }
+};
+
+Canvas.prototype.write = function (text) {
+    this.context.fillStyle = '#000';
+    this.context.font = 'bold ' + Math.floor(this.size * 0.75) + 'px Arial';
+    this.context.textAlign = 'center';
+    this.context.textBaseline = 'middle';
+    this.context.fillText(text, Math.floor(this.pixelWidth / 2), Math.floor(this.pixelHeight / 2));
 };
