@@ -39,13 +39,15 @@ function Game(width, height, winNumber) {
     this.tiles = [];
     this.freeTiles = width * height;
 
+    this.moved = false;
+
     this.maxNumber = 2;
     this.winNumber = winNumber;
 
     for (x = 0; x < width; x++) {
         this.tiles[x] = [];
         for (y = 0; y < height; y++) {
-            this.tiles[x][y] = 0;
+            this.tiles[x][y] = null;
         }
     }
 
@@ -64,8 +66,9 @@ Game.prototype.addTile = function () {
     for (x = 0; x < this.tiles.length; x++) {
         for (y = 0; y < this.tiles[x].length; y++) {
             if (!this.tiles[x][y] && !--tilePosition) {
-                this.tiles[x][y] = 2;
-                this.canvas.drawTile(x, y, 2);
+                var tile = new Tile(2, false);
+                this.tiles[x][y] = tile;
+                this.canvas.drawTile(x, y, tile);
                 this.freeTiles--;
             }
         }
@@ -82,18 +85,22 @@ Game.prototype.moveTile = function (fromX, fromY, deltaX, deltaY) {
         if (!this.tiles[fromX + deltaX][fromY + deltaY]) {
             this.tiles[fromX + deltaX][fromY + deltaY] = this.tiles[fromX][fromY];
             this.canvas.drawTile(fromX + deltaX, fromY + deltaY, this.tiles[fromX + deltaX][fromY + deltaY]);
-            this.tiles[fromX][fromY] = 0;
-            this.canvas.drawTile(fromX, fromY, 0);
+            this.tiles[fromX][fromY] = null;
+            this.canvas.drawTile(fromX, fromY, null);
+            this.moved = true;
         }
         // same number
-        if (this.tiles[fromX][fromY] === this.tiles[fromX + deltaX][fromY + deltaY]) {
-            var newNumber = this.tiles[fromX][fromY] * 2;
-            this.tiles[fromX + deltaX][fromY + deltaY] = newNumber;
-            this.canvas.drawTile(fromX + deltaX, fromY + deltaY, newNumber);
-            this.tiles[fromX][fromY] = 0;
-            this.canvas.drawTile(fromX, fromY, 0);
+        var tile1 = this.tiles[fromX][fromY];
+        var tile2 = this.tiles[fromX + deltaX][fromY + deltaY];
+        if (tile1 && tile2 && tile1.number === tile2.number && !tile1.changed && !tile2.changed) {
+            var newTile = new Tile(tile1.number * 2, true);
+            this.tiles[fromX + deltaX][fromY + deltaY] = newTile;
+            this.canvas.drawTile(fromX + deltaX, fromY + deltaY, newTile);
+            this.tiles[fromX][fromY] = null;
+            this.canvas.drawTile(fromX, fromY, null);
             this.freeTiles++;
-            this.maxNumber = Math.max(this.maxNumber, newNumber);
+            this.maxNumber = Math.max(this.maxNumber, newTile.number);
+            this.moved = true;
             return;
         }
         // move directions
@@ -108,7 +115,7 @@ Game.prototype.moveLeft = function () {
             this.moveTile(x, y, -1, 0);
         }
     }
-    this.addTile();
+    this.afterMove();
 };
 
 Game.prototype.moveUp = function () {
@@ -117,7 +124,7 @@ Game.prototype.moveUp = function () {
             this.moveTile(x, y, 0, 1);
         }
     }
-    this.addTile();
+    this.afterMove();
 };
 
 Game.prototype.moveRight = function () {
@@ -126,7 +133,7 @@ Game.prototype.moveRight = function () {
             this.moveTile(x, y, 1, 0);
         }
     }
-    this.addTile();
+    this.afterMove();
 };
 
 Game.prototype.moveDown = function () {
@@ -135,8 +142,31 @@ Game.prototype.moveDown = function () {
             this.moveTile(x, y, 0, -1);
         }
     }
-    this.addTile();
+    this.afterMove();
 };
+
+Game.prototype.afterMove = function () {
+    if (this.moved) {
+        this.addTile();
+        this.moved = false;
+        // mark all tiles as not changed
+        for (x = 0; x < this.tiles.length; x++) {
+            for (y = 0; y < this.tiles[x].length; y++) {
+                if (this.tiles[x][y]) {
+                    this.tiles[x][y].changed = false;
+                }
+            }
+        }
+    }
+};
+
+/**
+ * Class that represents a single tile
+ */
+function Tile(number, changed) {
+    this.number = number;
+    this.changed = changed;
+}
 
 /**
  * Class that is responsible for drawing on the canvas
@@ -156,48 +186,50 @@ function Canvas(id, width, height, size) {
     this.context = element.getContext('2d');
 }
 
-Canvas.prototype.drawTile = function (x, y, number) {
-    switch (number) {
-        case 0:
-            this.context.fillStyle = '#fff';
-            break;
-        case 2:
-            this.context.fillStyle = '#ddd';
-            break;
-        case 4:
-            this.context.fillStyle = '#D6C2AD';
-            break;
-        case 8:
-            this.context.fillStyle = '#f93';
-            break;
-        case 16:
-            this.context.fillStyle = '#f60';
-            break;
-        case 32:
-            this.context.fillStyle = '#f30';
-            break;
-        case 64:
-            this.context.fillStyle = '#f00';
-            break;
-        case 128:
-        case 256:
-            this.context.fillStyle = '#fc0';
-            break;
-        case 512:
-        case 1024:
-        case 2048:
-            this.context.fillStyle = '#fc6';
-            break;
-        default:
-            this.context.fillStyle = '#000';
+Canvas.prototype.drawTile = function (x, y, tile) {
+    if (tile) {
+        switch (tile.number) {
+            case 2:
+                this.context.fillStyle = '#ddd';
+                break;
+            case 4:
+                this.context.fillStyle = '#D6C2AD';
+                break;
+            case 8:
+                this.context.fillStyle = '#f93';
+                break;
+            case 16:
+                this.context.fillStyle = '#f60';
+                break;
+            case 32:
+                this.context.fillStyle = '#f30';
+                break;
+            case 64:
+                this.context.fillStyle = '#f00';
+                break;
+            case 128:
+            case 256:
+                this.context.fillStyle = '#fc0';
+                break;
+            case 512:
+            case 1024:
+            case 2048:
+                this.context.fillStyle = '#fc6';
+                break;
+            default:
+                this.context.fillStyle = '#000';
+        }
+    } else {
+        this.context.fillStyle = '#fff';
     }
+
     this.context.fillRect(this.size * x, this.pixelHeight - (this.size * (y + 1)), this.size, this.size);
 
-    if (number) {
+    if (tile) {
         this.context.fillStyle = '#000';
         this.context.font = 'bold ' + Math.floor(this.size / 3) + 'px Arial';
         this.context.textAlign = 'center';
         this.context.textBaseline = 'middle';
-        this.context.fillText(number, Math.floor(this.size * (x + 0.5)), this.pixelHeight - Math.floor(this.size * (y + 0.5)));
+        this.context.fillText(tile.number, Math.floor(this.size * (x + 0.5)), this.pixelHeight - Math.floor(this.size * (y + 0.5)));
     }
 };
