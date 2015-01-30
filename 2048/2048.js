@@ -57,6 +57,7 @@ function Game(width, height, winNumber) {
 
     this.maxNumber = 2;
     this.winNumber = winNumber;
+    this.score = 0;
 
     for (x = 0; x < width; x++) {
         this.tiles[x] = [];
@@ -122,6 +123,7 @@ Game.prototype.moveTile = function (fromX, fromY, deltaX, deltaY) {
                 this.canvas.write("You win!")
             }
 
+            this.score += newTile.number;
             this.moved = true;
             return;
         }
@@ -183,6 +185,8 @@ Game.prototype.afterMove = function () {
         this.active = false;
         this.canvas.write("Game over")
     }
+    // print score
+    document.getElementById("score").innerHTML = this.score.toString();
 };
 
 /**
