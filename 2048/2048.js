@@ -62,6 +62,7 @@ function Game(width, height, winNumber) {
         this.tiles[x] = [];
         for (y = 0; y < height; y++) {
             this.tiles[x][y] = null;
+            this.canvas.drawTile(x, y, null);
         }
     }
 
@@ -196,10 +197,8 @@ function Tile(number, changed) {
  * Class that is responsible for drawing on the canvas
  */
 function Canvas(id, width, height, size) {
-    this.width = width;
-    this.pixelWidth = width * size;
-    this.height = height;
-    this.pixelHeight = height * size;
+    this.pixelWidth = width * Math.floor(size * 1.1);
+    this.pixelHeight = height * Math.floor(size * 1.1);
     this.size = size;
 
     // adjust canvas dimensions
@@ -211,50 +210,69 @@ function Canvas(id, width, height, size) {
 }
 
 Canvas.prototype.drawTile = function (x, y, tile) {
+    var color = '#f8f8f8';
     if (tile) {
         switch (tile.number) {
             case 2:
-                this.context.fillStyle = '#ddd';
+                color = '#ddd';
                 break;
             case 4:
-                this.context.fillStyle = '#D6C2AD';
+                color = '#dca';
                 break;
             case 8:
-                this.context.fillStyle = '#f93';
+                color = '#f93';
                 break;
             case 16:
-                this.context.fillStyle = '#f60';
+                color = '#f60';
                 break;
             case 32:
-                this.context.fillStyle = '#f30';
+                color = '#f30';
                 break;
             case 64:
-                this.context.fillStyle = '#f00';
+                color = '#f00';
                 break;
             case 128:
             case 256:
-                this.context.fillStyle = '#fc0';
+                color = '#fc0';
                 break;
             case 512:
             case 1024:
             case 2048:
-                this.context.fillStyle = '#fc6';
+                color = '#fc6';
                 break;
             default:
-                this.context.fillStyle = '#000';
+                color = '#000';
         }
-    } else {
-        this.context.fillStyle = '#fff';
     }
 
-    this.context.fillRect(this.size * x, this.pixelHeight - (this.size * (y + 1)), this.size, this.size);
+    var rectX = Math.floor(this.size * 1.1) * x;
+    var rectY = this.pixelHeight - (Math.floor(this.size * 1.1) * (y + 1));
+    var rectWidth = this.size;
+    var rectHeight = this.size;
+    var cornerRadius = Math.floor(this.size * 0.5);
 
+    this.context.fillStyle = '#fff';
+    this.context.fillRect(rectX, rectY, rectWidth, rectHeight);
+
+    this.context.fillStyle = color;
+    this.context.strokeStyle = color;
+
+    this.context.lineJoin = "round";
+    this.context.lineWidth = cornerRadius;
+
+    this.context.strokeRect(rectX + (cornerRadius / 2), rectY + (cornerRadius / 2), rectWidth - cornerRadius,
+        rectHeight - cornerRadius);
+    this.context.fillRect(rectX + (cornerRadius / 2), rectY + (cornerRadius / 2), rectWidth - cornerRadius,
+        rectHeight - cornerRadius);
+
+    // write number
     if (tile) {
         this.context.fillStyle = '#000';
         this.context.font = 'bold ' + Math.floor(this.size / 3) + 'px Arial';
         this.context.textAlign = 'center';
         this.context.textBaseline = 'middle';
-        this.context.fillText(tile.number, Math.floor(this.size * (x + 0.5)), this.pixelHeight - Math.floor(this.size * (y + 0.5)));
+        this.context.fillText(tile.number, Math.floor(this.size * 1.1 * (x + 0.45)),
+            this.pixelHeight - Math.floor(this.size * 1.1 * (y + 0.55)));
     }
 };
 
