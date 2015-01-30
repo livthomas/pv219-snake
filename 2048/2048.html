@@ -3,10 +3,20 @@
     <head lang="en">
         <meta charset="UTF-8">
         <title>2048</title>
+        <link rel="stylesheet" type="text/css" href="2048.css" />
         <script src="2048.js"></script>
     </head>
     <body>
         <h1>2048</h1>
+        <form>
+            <label for="winNumber">Goal:</label>
+            <input id="winNumber" type="text" value="2048">
+            <label for="width">Width:</label>
+            <input id="width" type="text" value="4">
+            <label for="height">Height:</label>
+            <input id="height" type="text" value="4">
+            <button id="start">Start</button>
+        </form>
         <canvas id="playingArea" width="1" height="1"></canvas>
         <h2>Score</h2>
         <p id="score">0</p>

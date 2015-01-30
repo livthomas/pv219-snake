@@ -20,7 +20,33 @@
 var game;
 
 window.onload = function () {
-    game = new Game(4, 4, 2048);
+    document.getElementById("start").onclick = function (e) {
+        e.preventDefault();
+
+        var winNumber = document.getElementById("winNumber").value;
+        var number = winNumber;
+        while (number !== 1) {
+            number /= 2;
+            if (number < 1) {
+                alert("Your goal number is not a power of two.");
+                return;
+            }
+        }
+
+        var width = parseInt(document.getElementById("width").value);
+        if (isNaN(width) || width < 2) {
+            alert("The width must be an integer value bigger than 1.");
+            return;
+        }
+
+        var height = document.getElementById("height").value;
+        if (isNaN(height) || height < 2) {
+            alert("The height must be an integer value bigger than 1.");
+            return;
+        }
+
+        game = new Game(width, height, winNumber);
+    };
 };
 
 document.onkeydown = function (e) {
@@ -49,6 +75,9 @@ document.onkeydown = function (e) {
 function Game(width, height, winNumber) {
 
     this.canvas = new Canvas('playingArea', width, height, 100);
+    this.width = width;
+    this.height = height;
+
     this.tiles = [];
     this.freeTiles = width * height;
 
@@ -134,8 +163,8 @@ Game.prototype.moveTile = function (fromX, fromY, deltaX, deltaY) {
 };
 
 Game.prototype.moveLeft = function () {
-    for (x = 1; x < 4; x++) {
-        for (y = 0; y < 4; y++) {
+    for (x = 1; x < this.width; x++) {
+        for (y = 0; y < this.height; y++) {
             this.moveTile(x, y, -1, 0);
         }
     }
@@ -143,8 +172,8 @@ Game.prototype.moveLeft = function () {
 };
 
 Game.prototype.moveUp = function () {
-    for (y = 2; y >= 0; y--) {
-        for (x = 0; x < 4; x++) {
+    for (y = this.height - 2; y >= 0; y--) {
+        for (x = 0; x < this.width; x++) {
             this.moveTile(x, y, 0, 1);
         }
     }
@@ -152,8 +181,8 @@ Game.prototype.moveUp = function () {
 };
 
 Game.prototype.moveRight = function () {
-    for (x = 2; x >= 0; x--) {
-        for (y = 0; y < 4; y++) {
+    for (x = this.width - 2; x >= 0; x--) {
+        for (y = 0; y < this.height; y++) {
             this.moveTile(x, y, 1, 0);
         }
     }
@@ -161,8 +190,8 @@ Game.prototype.moveRight = function () {
 };
 
 Game.prototype.moveDown = function () {
-    for (y = 1; y < 4; y++) {
-        for (x = 0; x < 4; x++) {
+    for (y = 1; y < this.height; y++) {
+        for (x = 0; x < this.width; x++) {
             this.moveTile(x, y, 0, -1);
         }
     }
@@ -201,6 +230,7 @@ function Tile(number, changed) {
  * Class that is responsible for drawing on the canvas
  */
 function Canvas(id, width, height, size) {
+    this.width = width;
     this.pixelWidth = width * Math.floor(size * 1.1);
     this.pixelHeight = height * Math.floor(size * 1.1);
     this.size = size;
@@ -282,7 +312,7 @@ Canvas.prototype.drawTile = function (x, y, tile) {
 
 Canvas.prototype.write = function (text) {
     this.context.fillStyle = '#000';
-    this.context.font = 'bold ' + Math.floor(this.size * 0.75) + 'px Arial';
+    this.context.font = 'bold ' + Math.floor(this.width * this.size * 0.75 * 0.25) + 'px Arial';
     this.context.textAlign = 'center';
     this.context.textBaseline = 'middle';
     this.context.fillText(text, Math.floor(this.pixelWidth / 2), Math.floor(this.pixelHeight / 2));
